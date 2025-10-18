@@ -3,6 +3,7 @@ import React from 'react';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Textarea } from './ui/Textarea';
+import { useTranslation } from '../i18n';
 
 interface OutputDisplayProps {
     content: string;
@@ -24,13 +25,18 @@ const CopyIcon = () => (
 
 
 export const OutputDisplay: React.FC<OutputDisplayProps> = ({ content, filename, onReset }) => {
-    
+    const { t } = useTranslation();
+    const downloadName = React.useMemo(() => {
+        const normalized = filename?.replace(/\.zip$/i, '') || 'codedump';
+        return `${normalized}.md`;
+    }, [filename]);
+
     const handleDownload = () => {
         const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'codedump.md';
+        a.download = downloadName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -44,11 +50,11 @@ export const OutputDisplay: React.FC<OutputDisplayProps> = ({ content, filename,
     return (
         <Card className="h-full flex flex-col">
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Generated CodeDump</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('output.title')}</h2>
                 <div className="flex items-center space-x-2">
-                    <Button onClick={handleCopy} variant="secondary" leftIcon={<CopyIcon />}>Copy</Button>
-                    <Button onClick={handleDownload} variant="primary" leftIcon={<DownloadIcon />}>Download</Button>
-                    <Button onClick={onReset} variant="secondary">New Dump</Button>
+                    <Button onClick={handleCopy} variant="secondary" leftIcon={<CopyIcon />}>{t('output.copy')}</Button>
+                    <Button onClick={handleDownload} variant="primary" leftIcon={<DownloadIcon />}>{t('output.download')}</Button>
+                    <Button onClick={onReset} variant="secondary">{t('output.newDump')}</Button>
                 </div>
             </div>
             <div className="flex-grow">

@@ -57,8 +57,8 @@ export const OutputDisplay: React.FC<OutputDisplayProps> = ({ content, filename,
                     <Button onClick={onReset} variant="secondary">{t('output.newDump')}</Button>
                 </div>
             </div>
-            <div className="flex-grow">
-                <Textarea readOnly value={content} className="resize-none font-mono text-sm" />
+            <div className="flex-grow min-h-[60vh]">
+                <Textarea readOnly value={content} className="resize-none font-mono text-sm min-h-[60vh]" />
             </div>
         </Card>
     );

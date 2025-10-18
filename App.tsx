@@ -7,6 +7,19 @@ import { FileUpload } from './components/FileUpload';
 import { OutputDisplay } from './components/OutputDisplay';
 import { useTranslation } from './i18n';
 import { LanguageSelector } from './components/LanguageSelector';
+import { Button } from './components/ui/Button';
+
+const DownloadIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    </svg>
+);
+
+const CopyIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    </svg>
+);
 
 const defaultOptions: DumpOptions = {
     include: ['**/*'],
@@ -67,6 +80,11 @@ function App() {
         }
     }, [t]);
 
+    const downloadName = useMemo(() => {
+        const normalized = zipFile?.name?.replace(/\.zip$/i, '') || 'codedump';
+        return `${normalized}.md`;
+    }, [zipFile]);
+
     const handleGenerate = async () => {
         if (!zipFile) {
             alert(t('app.noZip'));
@@ -89,17 +107,39 @@ function App() {
         }
     };
 
-    const handleReset = () => {
+    const handleReset = useCallback(() => {
         setZipFile(null);
         setOutput(null);
         setIsLoading(false);
         setProgress(0);
-    };
+    }, []);
+
+    const handleDownload = useCallback(() => {
+        if (!output) {
+            return;
+        }
+        const blob = new Blob([output], { type: 'text/markdown;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = downloadName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }, [downloadName, output]);
+
+    const handleCopy = useCallback(() => {
+        if (!output) {
+            return;
+        }
+        navigator.clipboard.writeText(output);
+    }, [output]);
 
     const memoizedOptionsPanel = useMemo(() => (
-        <OptionsPanel 
-            options={options} 
-            setOptions={setOptions} 
+        <OptionsPanel
+            options={options}
+            setOptions={setOptions}
             onPresetChange={handlePresetChange}
             disabled={isLoading}
         />
@@ -118,33 +158,40 @@ function App() {
                     </div>
                 </header>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 h-[calc(100vh-12rem)]">
-                    <div className="lg:col-span-1 h-full">
+                {output && !isLoading && (
+                    <div className="flex flex-wrap justify-end gap-3 mb-6">
+                        <Button onClick={handleCopy} variant="secondary" leftIcon={<CopyIcon />}>{t('output.copy')}</Button>
+                        <Button onClick={handleDownload} variant="primary" leftIcon={<DownloadIcon />}>{t('output.download')}</Button>
+                        <Button onClick={handleReset} variant="secondary">{t('output.newDump')}</Button>
+                    </div>
+                )}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-[calc(100vh-12rem)]">
+                    <div className="h-full flex flex-col">
                         {memoizedOptionsPanel}
                     </div>
-                    <div className="lg:col-span-2 h-full">
-                       {isLoading ? (
-                           <LoadingIndicator progress={progress} />
-                       ) : output !== null ? (
-                           <OutputDisplay content={output} filename={zipFile?.name || 'codedump'} onReset={handleReset} />
-                       ) : (
-                           <div className="flex flex-col h-full gap-6">
-                               <div className="flex-grow">
-                                   <FileUpload onFileSelect={handleFileSelect} disabled={isLoading} />
-                               </div>
-                               {zipFile && (
-                                   <div className="flex-shrink-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 flex justify-between items-center">
-                                       <p className="text-sm font-medium">{t('app.selectedFile', { filename: zipFile.name })}</p>
-                                       <button
-                                           onClick={handleGenerate}
-                                           className="px-6 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                                       >
-                                           {t('app.generate')}
-                                       </button>
-                                   </div>
-                               )}
-                           </div>
-                       )}
+                    <div className="h-full flex flex-col">
+                        {isLoading ? (
+                            <LoadingIndicator progress={progress} />
+                        ) : output !== null ? (
+                            <OutputDisplay content={output} />
+                        ) : (
+                            <div className="flex flex-col h-full gap-6">
+                                <div className="flex-grow">
+                                    <FileUpload onFileSelect={handleFileSelect} disabled={isLoading} />
+                                </div>
+                                {zipFile && (
+                                    <div className="flex-shrink-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg p-4 flex justify-between items-center">
+                                        <p className="text-sm font-medium">{t('app.selectedFile', { filename: zipFile.name })}</p>
+                                        <button
+                                            onClick={handleGenerate}
+                                            className="px-6 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                                        >
+                                            {t('app.generate')}
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </div>
             </main>

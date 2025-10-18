@@ -1,6 +1,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { Card } from './ui/Card';
+import { useTranslation } from '../i18n';
 
 interface FileUploadProps {
     onFileSelect: (file: File) => void;
@@ -16,6 +17,7 @@ const UploadIcon = () => (
 
 export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled }) => {
     const [isDragging, setIsDragging] = useState(false);
+    const { t } = useTranslation();
 
     const handleDrag = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -55,9 +57,9 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onFileSelect, disabled }
                 <label htmlFor="file-upload" className="w-full text-center cursor-pointer">
                     <UploadIcon />
                     <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        <span className="font-semibold text-blue-600 dark:text-blue-400">Upload a ZIP file</span> or drag and drop
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">{t('fileUpload.callToAction')}</span> {t('fileUpload.orDragDrop')}
                     </p>
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">ZIP archive of your project</p>
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">{t('fileUpload.hint')}</p>
                 </label>
             </div>
         </Card>

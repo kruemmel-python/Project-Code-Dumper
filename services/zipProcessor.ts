@@ -1,5 +1,5 @@
 import { DumpOptions, FileResult } from '../types';
-import { DEFAULT_EXCLUDES } from '../constants';
+import { DEFAULT_EXCLUDES, MAX_OUTPUT_CHARACTERS, MODEL_CONFIG } from '../constants';
 import { minimatch } from 'minimatch';
 
 declare const JSZip: any;
@@ -171,7 +171,7 @@ export async function createCodeDump(
     onProgress: (percent: number) => void
 ): Promise<FileResult[]> {
     const zip = await JSZip.loadAsync(zipFile);
-    
+
     const filesToProcess = Object.values(zip.files).filter((file: any) => {
         return !file.dir && !shouldSkip(file.name, options.include, options.exclude);
     });
@@ -188,12 +188,60 @@ export async function createCodeDump(
         }
     });
 
+    const totalFiles = filesToProcess.length;
+    if (totalFiles === 0) {
+        onProgress(100);
+        return [];
+    }
+
     const results: FileResult[] = [];
-    for (let i = 0; i < filesToProcess.length; i++) {
+    const skippedFiles: string[] = [];
+    let processedCount = 0;
+    let cumulativeOutputLength = 0;
+
+    for (let i = 0; i < totalFiles; i++) {
         const file = filesToProcess[i];
         const result = await processFile(file, options);
+        const projectedLength = cumulativeOutputLength + result.markdown.length;
+
+        if (projectedLength > MAX_OUTPUT_CHARACTERS) {
+            skippedFiles.push(...filesToProcess.slice(i).map((remaining: any) => remaining.name));
+            break;
+        }
+
         results.push(result);
-        onProgress(Math.round(((i + 1) / filesToProcess.length) * 100));
+        cumulativeOutputLength = projectedLength;
+        processedCount++;
+        onProgress(Math.round((processedCount / totalFiles) * 100));
+    }
+
+    if (processedCount < totalFiles) {
+        onProgress(100);
+    }
+
+    if (skippedFiles.length > 0) {
+        const skippedList = skippedFiles.map(path => `- \`${path}\``).join('  \n');
+        const approxTokens = MODEL_CONFIG.maxInputTokens.toLocaleString();
+        const approxCharacters = MAX_OUTPUT_CHARACTERS.toLocaleString();
+        const noticeLines = [
+            '## Token Limit Notice',
+            `> The Granite model (${MODEL_CONFIG.name}) is currently capped at approximately ${approxTokens} tokens (≈ ${approxCharacters} characters). Additional files were skipped to remain within this limit.`,
+            '',
+        ];
+
+        if (skippedList) {
+            noticeLines.push('### Skipped Files');
+            noticeLines.push(skippedList);
+            noticeLines.push('');
+        }
+
+        noticeLines.push('Consider refining your include/exclude filters or increasing the token allowance to capture more content.');
+        noticeLines.push('');
+
+        results.push({
+            path: '__TOKEN_LIMIT_NOTICE__',
+            markdown: noticeLines.join('\n'),
+        });
     }
 
     return results;

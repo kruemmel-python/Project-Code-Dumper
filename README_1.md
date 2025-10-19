@@ -15,6 +15,12 @@ View your app in AI Studio: https://ai.studio/apps/drive/1dPvQ1LtGBO0b2573l15JM_
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. (Optional) Configure Granite credentials in [.env.local](.env.local), e.g. `GRANITE_API_KEY`, `GRANITE_MODEL_ID`, or override the maximum token allowance if your deployment differs from the defaults.
 3. Run the app:
    `npm run dev`
+
+### Model configuration
+
+- Default model: `granite-8b-code-instruct`
+- Maximum tokens considered: `65,101` (≈ 260,404 characters)
+- Reason: Keeps the generated Markdown compatible with the current Granite GGUF runtime while staying well below the 1,048,576-token hard limit.

@@ -1,6 +1,14 @@
 
 import { Preset } from './types';
 
+export const MODEL_CONFIG = {
+    name: 'granite-8b-code-instruct',
+    maxInputTokens: 65101,
+    averageCharsPerToken: 4,
+} as const;
+
+export const MAX_OUTPUT_CHARACTERS = MODEL_CONFIG.maxInputTokens * MODEL_CONFIG.averageCharsPerToken;
+
 export const DEFAULT_EXCLUDES: string[] = [
     "**/.git/**", "**/.github/**", "**/.gitlab/**",
     "**/.idea/**", "**/.vscode/**",

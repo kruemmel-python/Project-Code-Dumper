@@ -11,8 +11,10 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        'process.env.API_KEY': JSON.stringify(env.GRANITE_API_KEY),
+        'process.env.GRANITE_API_KEY': JSON.stringify(env.GRANITE_API_KEY),
+        'process.env.GRANITE_MODEL_ID': JSON.stringify(env.GRANITE_MODEL_ID || 'granite-8b-code-instruct'),
+        'process.env.GRANITE_MAX_INPUT_TOKENS': JSON.stringify(env.GRANITE_MAX_INPUT_TOKENS || '65101'),
       },
       resolve: {
         alias: {
